@@ -17,9 +17,20 @@ const UserManagement = () => {
     const fetchUsers = async () => {
       try {
         console.log('Fetching users...');
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
         const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/users`, {
-          withCredentials: true // Make sure to include credentials
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         });
+        
         console.log('Users fetched:', response.data);
         setUsers(response.data);
         setError('');
@@ -48,10 +59,16 @@ const UserManagement = () => {
   const handleDeleteUser = async (userId) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/${userId}`);
+        const token = localStorage.getItem('token');
+        await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         setUsers(users.filter(user => user._id !== userId));
       } catch (error) {
-        setError('Failed to delete user');
+        setError('Failed to delete user: ' + (error.response?.data?.message || error.message));
         console.error(error);
       }
     }
@@ -209,16 +226,29 @@ const UserFormModal = ({ user, onClose, onSuccess }) => {
     setLoading(true);
     
     try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
       if (isEditing) {
-        // Remove password if it's empty (don't update password)
         const dataToSend = { ...formData };
         if (!dataToSend.password) {
           delete dataToSend.password;
         }
         
-        await axios.put(`${process.env.REACT_APP_API_URL}/api/users/${user._id}`, dataToSend);
+        await axios.put(
+          `${process.env.REACT_APP_API_URL}/api/users/${user._id}`, 
+          dataToSend,
+          { headers }
+        );
       } else {
-        await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/register`, formData);
+        await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/auth/register`, 
+          formData,
+          { headers }
+        );
       }
       
       onSuccess();

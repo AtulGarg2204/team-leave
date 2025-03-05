@@ -18,15 +18,11 @@ const Login = () => {
     setLoading(true);
     
     try {
-      const result = await login(email, password);
-      
-      if (result.success) {
-        navigate('/dashboard');
-      } else {
-        setError(result.message);
-      }
+      await login(email, password);
+      navigate('/dashboard');
     } catch (error) {
-      setError('Failed to log in');
+      console.error('Login error:', error);
+      setError(error?.message || 'Failed to log in');
     } finally {
       setLoading(false);
     }

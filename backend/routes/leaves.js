@@ -5,21 +5,29 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all leaves (admin sees all, users see only their own)
-router.get('/', authMiddleware,async (req, res) => {
-  console.log("hello");
+router.get('/', authMiddleware, async (req, res) => {
   try {
     let leaves;
     
     if (req.user.role === 'admin') {
-      console.log("hello1");
-      leaves = await Leave.find().populate('user', 'name email');
+      leaves = await Leave.find()
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 }); // Optional: sort by creation date
     } else {
-      console.log("hello2");
-      leaves = await Leave.find({ user: req.user.userId }).populate('user', 'name email');
+      leaves = await Leave.find({ user: req.user.userId })
+        .populate('user', 'name email')
+        .sort({ createdAt: -1 });
     }
     
-    res.json(leaves);
+    // Add a check to ensure user data is present
+    const sanitizedLeaves = leaves.map(leave => ({
+      ...leave.toObject(),
+      user: leave.user || { name: 'Unknown User', email: 'No email' }
+    }));
+    
+    res.json(sanitizedLeaves);
   } catch (error) {
+    console.error('Error fetching leaves:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

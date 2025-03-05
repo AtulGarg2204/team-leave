@@ -3,58 +3,99 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   
-  // Configure axios with the correct API URL and CORS settings
-  const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-  axios.defaults.baseURL = apiUrl;
-  axios.defaults.withCredentials = true;
-  axios.defaults.headers.common['Content-Type'] = 'application/json';
+  // Set up axios defaults
+  axios.defaults.baseURL = process.env.REACT_APP_API_URL;
   
-  // Check if user is logged in
+  // Add axios interceptor to add token to requests
+  axios.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+  
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await axios.get('/api/auth/me');
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     checkAuth();
   }, []);
   
-  // Login function
   const login = async (email, password) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
-      setUser(response.data.user);
+      
+      const { token, user } = response.data;
+      
+      // Save token to localStorage
+      localStorage.setItem('token', token);
+      
+      // Update state
+      setUser(user);
       setIsAuthenticated(true);
-      return { success: true };
+      
+      return response.data;
     } catch (error) {
       console.error('Login error:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Login failed'
-      };
+      throw error.response?.data || { message: 'Failed to login' };
     }
   };
   
-  // Register function
+  const logout = async () => {
+    try {
+      // Clear local storage first
+      localStorage.removeItem('token');
+      
+      // Clear state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Optional: Call backend logout endpoint
+      await axios.post('/api/auth/logout');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still clear local state even if backend call fails
+      localStorage.removeItem('token');
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+  };
+  
+  const checkAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get('/api/auth/me');
+      setUser(response.data.user);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      localStorage.removeItem('token');
+      setUser(null);
+      setIsAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const register = async (userData) => {
     try {
-      console.log('Registering user with API URL:', apiUrl);
+      console.log('Registering user with API URL:', process.env.REACT_APP_API_URL);
       const response = await axios.post('/api/auth/register', userData);
       setUser(response.data.user);
       setIsAuthenticated(true);
@@ -68,29 +109,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
   
-  // Logout function
-  const logout = async () => {
-    try {
-      await axios.post('/api/auth/logout');
-      setUser(null);
-      setIsAuthenticated(false);
-      return { success: true };
-    } catch (error) {
-      console.error('Logout error:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Logout failed'
-      };
-    }
-  };
-  
   const value = {
     user,
     isAuthenticated,
     loading,
     login,
     register,
-    logout
+    logout,
+    checkAuth
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

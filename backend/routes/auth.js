@@ -37,15 +37,10 @@ router.post('/register', async (req, res) => {
       { expiresIn: '1d' }
     );
     
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      sameSite: 'lax', // Helps with CORS issues
-      secure: process.env.NODE_ENV === 'production' // Only use secure in production
-    });
-    
+    // Return token instead of setting cookie
     res.status(201).json({
       message: 'User registered successfully',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -65,37 +60,25 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     
-    // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     
-    // Create JWT token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'your_jwt_secret',
       { expiresIn: '1d' }
     );
     
-    // Set cookie with token
-    res.cookie('token', token, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      sameSite: 'lax', // Helps with CORS issues
-      secure: process.env.NODE_ENV === 'production' // Only use secure in production
-    });
-    
-    console.log('Login successful, token set in cookie');
-    
+    // Return both token and user data
     res.json({
-      message: 'Login successful',
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -113,19 +96,18 @@ router.post('/login', async (req, res) => {
 
 // Logout user
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
 });
 
 // Get current user
 router.get('/me', async (req, res) => {
   try {
-    const token = req.cookies.token;
-    
-    if (!token) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Not authenticated' });
     }
-    
+
+    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
     const user = await User.findById(decoded.userId).select('-password');
     

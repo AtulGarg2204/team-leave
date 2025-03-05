@@ -136,8 +136,12 @@ const LeaveManagement = () => {
               {filteredLeaves.map(leave => (
                 <tr key={leave._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{leave.user.name}</div>
-                    <div className="text-sm text-gray-500">{leave.user.email}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {leave.user?.name || 'Unknown User'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {leave.user?.email || 'No email'}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">

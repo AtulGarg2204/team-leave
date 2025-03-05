@@ -15,8 +15,12 @@ const Layout = () => {
   const navigate = useNavigate();
   
   const handleLogout = async () => {
-    const result = await logout();
-    if (result.success) {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Navigate to login anyway even if there's an error
       navigate('/login');
     }
   };
