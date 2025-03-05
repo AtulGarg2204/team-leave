@@ -35,19 +35,16 @@ const Register = () => {
     setLoading(true);
     
     try {
-      const result = await register({
+      await register({
         name: formData.name,
         email: formData.email,
         password: formData.password
       });
-      
-      if (result.success) {
-        navigate('/dashboard');
-      } else {
-        setError(result.message);
-      }
+      // If registration is successful, navigate to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      setError('Failed to register');
+      console.error('Registration error:', error);
+      setError(error?.message || 'Failed to register');
     } finally {
       setLoading(false);
     }

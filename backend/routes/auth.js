@@ -6,7 +6,7 @@ const router = express.Router();
 // Register a new user
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role, annualLeaveQuota } = req.body;
+    const { name, email, password } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -23,9 +23,9 @@ router.post('/register', async (req, res) => {
       name,
       email,
       password,
-      role: isFirstUser ? 'admin' : (role || 'user'), // First user is always admin
-      annualLeaveQuota: annualLeaveQuota || 10,
-      remainingLeaves: annualLeaveQuota || 10
+      role: isFirstUser ? 'admin' : 'user',
+      annualLeaveQuota: 10,
+      remainingLeaves: 10
     });
     
     await user.save();
@@ -37,9 +37,8 @@ router.post('/register', async (req, res) => {
       { expiresIn: '1d' }
     );
     
-    // Return token instead of setting cookie
+    // Return token and user data
     res.status(201).json({
-      message: 'User registered successfully',
       token,
       user: {
         id: user._id,
@@ -51,6 +50,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

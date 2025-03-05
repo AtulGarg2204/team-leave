@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle} from 'lucide-react';
 
 const LeaveManagement = () => {
   const [leaves, setLeaves] = useState([]);

@@ -95,17 +95,21 @@ export const AuthProvider = ({ children }) => {
   
   const register = async (userData) => {
     try {
-      console.log('Registering user with API URL:', process.env.REACT_APP_API_URL);
       const response = await axios.post('/api/auth/register', userData);
-      setUser(response.data.user);
+      
+      const { token, user } = response.data;
+      
+      // Save token to localStorage
+      localStorage.setItem('token', token);
+      
+      // Update state
+      setUser(user);
       setIsAuthenticated(true);
-      return { success: true };
+      
+      return response.data;
     } catch (error) {
       console.error('Registration error:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Registration failed. Please check your network connection.'
-      };
+      throw error.response?.data || { message: 'Failed to register' };
     }
   };
   
