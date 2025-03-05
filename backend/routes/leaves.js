@@ -5,13 +5,16 @@ const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all leaves (admin sees all, users see only their own)
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware,async (req, res) => {
+  console.log("hello");
   try {
     let leaves;
     
     if (req.user.role === 'admin') {
+      console.log("hello1");
       leaves = await Leave.find().populate('user', 'name email');
     } else {
+      console.log("hello2");
       leaves = await Leave.find({ user: req.user.userId }).populate('user', 'name email');
     }
     
