@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReactCalendar from 'react-calendar';
-import { format, isToday, isSameDay } from 'date-fns';
-import { useAuth } from '../contexts/AuthContext';
+import { format, isToday} from 'date-fns';
 import { Calendar as CalendarIcon, User, AlertCircle } from 'lucide-react';
 import 'react-calendar/dist/Calendar.css';
 
@@ -65,7 +64,7 @@ const calendarStyles = `
 `;
 
 const Calendar = () => {
-  const { user } = useAuth();
+ 
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

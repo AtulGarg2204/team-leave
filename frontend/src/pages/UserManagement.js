@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+
 import { Edit, Trash2, Plus } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const UserManagement = () => {
-  const { user } = useAuth();
+
+  const { user: currentUser } = useAuth();
+
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -152,7 +155,7 @@ const UserManagement = () => {
                     <button
                       onClick={() => handleDeleteUser(user._id)}
                       className="text-red-600 hover:text-red-900"
-                      disabled={user._id === user._id} // Prevent deleting yourself
+                      disabled={user._id === currentUser?.id}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
